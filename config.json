@@ -1,0 +1,35 @@
+{
+  "interval": 60000,
+  "stateFile": "./lastState.json",
+  "games": [
+    {
+      "name": "ALTER EGO",
+      "universeId": "7419937615",
+      "placeId": "78515341506665",
+      "iconSize": "512x512",
+      "webhookUrl": "https://discord.com/api/webhooks/YOURWEBHOOKID/YOURWEBHOOKTOKEN",
+      "disabled": false,
+      "endpoints": {
+        "metadata": true,
+        "media": true,
+        "playability": true,
+        "servers": true,
+        "gamepasses": true,
+        "developerproducts": true,
+        "badges": true,
+        "icon": true
+      }
+    },
+    {
+      "name": "Tower Defense Simulator",
+      "universeId": "2653064683",
+      "placeId": "515146763",
+      "iconSize": "256x256",
+      "webhookUrl": "https://discord.com/api/webhooks/YOURWEBHOOKID/YOURWEBHOOKTOKEN",
+      "disabled": true,
+      "endpoints": {
+        "icon": true
+      }
+    }
+  ]
+}
