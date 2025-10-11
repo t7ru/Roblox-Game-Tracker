@@ -51,6 +51,7 @@ This is a tracker script that basically monitors any Roblox game you want it to 
 |----------------------|---------------------------------------------------------------------------------------------------|
 | `interval`           | Polling interval in milliseconds (default `60000`).                                               |
 | `stateFile`          | Path to cached state JSON (default `./lastState.json`).                                           |
+| `ignoredFields`      | Object of field names to ignore for sending webhooks (e.g., `{"fps": true, "ping": true}`). Case-insensitive. |
 | `games[]`            | Array of game definitions.                                                                         |
 | `games[].name`       | Friendly game name (used in logs and webhook title).                                              |
 | `games[].universeId` | Roblox universe ID for the experience.                                                            |

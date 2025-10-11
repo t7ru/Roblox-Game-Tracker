@@ -1,6 +1,10 @@
 {
   "interval": 60000,
   "stateFile": "./lastState.json",
+  "ignoredFields": {
+    "fps": true,
+    "ping": true
+  },
   "games": [
     {
       "name": "ALTER EGO",

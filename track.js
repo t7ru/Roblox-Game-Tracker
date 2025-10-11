@@ -1,6 +1,6 @@
 import { loadConfig, loadState, saveState } from "./src/config.js";
 import { buildEndpoints } from "./src/endpoints.js";
-import { diff } from "./src/diff.js";
+import { diff, setIgnoredFields } from "./src/diff.js";
 import { formatDiffMessage } from "./src/formatters.js";
 import { fetchJSON, fetchPlayerAvatars } from "./src/fetchers.js";
 import { sendWebhook } from "./src/webhook.js";
@@ -9,6 +9,8 @@ const config = loadConfig();
 const INTERVAL = config.interval || 60000;
 const STATE_FILE = config.stateFile || "./lastState.json";
 let lastState = loadState(STATE_FILE);
+
+setIgnoredFields(config.ignoredFields || {});
 
 async function checkChanges() {
   try {

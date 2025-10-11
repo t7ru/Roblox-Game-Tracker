@@ -1,3 +1,9 @@
+let ignoredFields = {};
+
+export function setIgnoredFields(fields) {
+  ignoredFields = fields || {};
+}
+
 function diffCheck(oldObj, newObj) {
   const result = {};
   for (const key in newObj) {
@@ -6,6 +12,7 @@ function diffCheck(oldObj, newObj) {
 
     if (key === "fps" && typeof oldVal === "number" && typeof newVal === "number") {
       if (Math.floor(oldVal) !== Math.floor(newVal)) {
+        if (ignoredFields[key.toLowerCase()]) continue;
         result[key] = { old: oldVal, new: newVal };
       }
       continue;
@@ -16,9 +23,11 @@ function diffCheck(oldObj, newObj) {
     if (typeof newVal === "object" && newVal !== null) {
       const subDiff = diff(oldVal, newVal);
       if (Object.keys(subDiff).length > 0) {
+        if (ignoredFields[key.toLowerCase()]) continue;
         result[key] = subDiff;
       }
     } else {
+      if (ignoredFields[key.toLowerCase()]) continue;
       result[key] = { old: oldVal, new: newVal };
     }
   }
@@ -64,17 +73,21 @@ export function diff(oldObj = {}, newObj = {}) {
         });
 
         if (added.length || removed.length || modified.length) {
+          if (ignoredFields[key.toLowerCase()]) continue;
           result[key] = { added, removed, modified };
         }
       } else {
+        if (ignoredFields[key.toLowerCase()]) continue;
         result[key] = { old: oldVal, new: newVal };
       }
     } else if (typeof newVal === "object" && newVal !== null) {
-      const subDiff = diff(oldVal, newVal);
+      const subDiff = diff(oldVal, newObj);
       if (Object.keys(subDiff).length > 0) {
+        if (ignoredFields[key.toLowerCase()]) continue;
         result[key] = subDiff;
       }
     } else {
+      if (ignoredFields[key.toLowerCase()]) continue;
       result[key] = { old: oldVal, new: newVal };
     }
   }
