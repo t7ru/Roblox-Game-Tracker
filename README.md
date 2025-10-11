@@ -3,12 +3,17 @@
 *If you don't want to deal with the hassle of hosting it yourself, you can contact me and I will host it for the low low price of $1.99 a month. Negotiable of course.*
 
 ## Setup
-1. **Install dependencies**
+1. **Clone to your server **
+    ```
+    git clone https://github.com/t7ru/Roblox-Game-Tracker.git
+    ```
+
+2. **Install dependencies**
    ```
    npm install
    ```
 
-2. **Create/Update `config.json`**
+3. **Update `config.json`**
    ```json
    {
      "interval": 60000,
@@ -36,7 +41,7 @@
    }
    ```
 
-3. **Run the tracker**
+4. **Run the tracker**
    ```
    node index.js
    ```
