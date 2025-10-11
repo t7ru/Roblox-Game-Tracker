@@ -20,8 +20,8 @@ This is a tracker script that basically monitors any Roblox game you want it to 
      "games": [
        {
          "name": "Placeholder Game",
-         "universeId": "123456789",
-         "placeId": "987654321",
+         "universeId": "YOURUNIVERSEIDHERE",
+         "placeId": "YOURPLACEIDHERE",
          "iconSize": "128x128",
          "webhookUrl": "https://discord.com/api/webhooks/YOURWEBHOOKID/YOURWEBHOOKTOKEN",
          "disabled": false,
