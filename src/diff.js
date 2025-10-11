@@ -81,7 +81,7 @@ export function diff(oldObj = {}, newObj = {}) {
         result[key] = { old: oldVal, new: newVal };
       }
     } else if (typeof newVal === "object" && newVal !== null) {
-      const subDiff = diff(oldVal, newObj);
+      const subDiff = diff(oldVal, newVal);
       if (Object.keys(subDiff).length > 0) {
         if (ignoredFields[key.toLowerCase()]) continue;
         result[key] = subDiff;
