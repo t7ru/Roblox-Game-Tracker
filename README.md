@@ -1,6 +1,5 @@
 # Roblox Game Tracker
-
-*If you don't want to deal with the hassle of hosting it yourself, you can contact me and I will host it for the low low price of $1.99 a month. Negotiable of course.*
+This is a tracker script that basically monitors any Roblox game you want it to track. It was originally made for the Roblox game ALTER EGO to basically stalk its development and help document any changes made.
 
 ## Setup
 1. **Clone to your server **
@@ -43,7 +42,7 @@
 
 4. **Run the tracker**
    ```
-   node index.js
+   node track.js
    ```
 
 ## Configuration Reference
