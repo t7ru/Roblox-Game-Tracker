@@ -2,7 +2,7 @@
 This is a tracker script that basically monitors any Roblox game you want it to track. It was originally made for the Roblox game ALTER EGO to basically stalk its development and help document any changes made.
 
 ## Setup
-1. **Clone to your server **
+1. **Clone to your server**
     ```
     git clone https://github.com/t7ru/Roblox-Game-Tracker.git
     ```
