@@ -52,7 +52,7 @@ async function checkChanges() {
         continue;
       }
 
-      const messages = formatDiffMessage(gameChanges, "", game.name);
+      const messages = formatDiffMessage(gameChanges, "", game.name, game);
       let content = `**[${game.name}] Changes Detected**\n**----------------**\n`;
       content += messages.join("\n");
 

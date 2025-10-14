@@ -5,7 +5,7 @@ export function formatFieldName(field) {
     .trim();
 }
 
-export function formatDiffMessage(changes, path = "", gameName = "") {
+export function formatDiffMessage(changes, path = "", gameName = "", gameConfig = null) {
   const messages = [];
 
   for (const [key, value] of Object.entries(changes)) {
@@ -13,9 +13,13 @@ export function formatDiffMessage(changes, path = "", gameName = "") {
     const fieldName = formatFieldName(key);
 
     if (value && typeof value === "object" && "old" in value && "new" in value) {
-      messages.push(
-        `🔄 **${fieldName}** changed from \`${value.old}\` to \`${value.new}\``
-      );
+      let changeMessage = `🔄 **${fieldName}** changed from \`${value.old}\` to \`${value.new}\``;
+      if (key.toLowerCase() === 'universeid') {
+        changeMessage = `🔄 **Game Universe ID** changed from \`${value.old}\` to \`${value.new}\``;
+      } else if (key.toLowerCase() === 'placeid') {
+        changeMessage = `🔄 **Game Place ID** changed from \`${value.old}\` to \`${value.new}\``;
+      }
+      messages.push(changeMessage);
     } else if (
       value &&
       typeof value === "object" &&
@@ -46,14 +50,24 @@ export function formatDiffMessage(changes, path = "", gameName = "") {
       if (value.modified?.length) {
         messages.push(`✏️ **${value.modified.length}** item(s) modified in **${fieldName}**`);
         value.modified.forEach((item) => {
-          messages.push(`   📝 **Item ID ${item.id}**:`);
-          const subMessages = formatDiffMessage(item.diff, currentPath, gameName);
+          let itemLabel = `Item ID ${item.id}`;
+
+          if (gameConfig) {
+            if (item.id === gameConfig.universeId) {
+              itemLabel = `${item.id} (Universe)`;
+            } else if (item.id === gameConfig.placeId) {
+              itemLabel = `${item.id} (Place)`;
+            }
+          }
+          
+          messages.push(`   📝 **${itemLabel}**:`);
+          const subMessages = formatDiffMessage(item.diff, currentPath, gameName, gameConfig);
           subMessages.forEach((msg) => messages.push(`      ${msg}`));
         });
       }
     } else if (value && typeof value === "object") {
       messages.push(`📂 **${fieldName}** has changes:`);
-      const subMessages = formatDiffMessage(value, currentPath, gameName);
+      const subMessages = formatDiffMessage(value, currentPath, gameName, gameConfig);
       subMessages.forEach((msg) => messages.push(`   ${msg}`));
     }
   }
