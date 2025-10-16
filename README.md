@@ -17,6 +17,11 @@ This is a tracker script that basically monitors any Roblox game you want it to 
    {
      "interval": 60000,
      "stateFile": "./lastState.json",
+     "ignoredFields": {
+       "fps": true,
+       "ping": true,
+       "developerproducts.nextPageCursor": true
+     },
      "games": [
        {
          "name": "Placeholder Game",
@@ -46,21 +51,44 @@ This is a tracker script that basically monitors any Roblox game you want it to 
    ```
 
 ## Configuration Reference
-
 | Key                  | Description                                                                                       |
 |----------------------|---------------------------------------------------------------------------------------------------|
 | `interval`           | Polling interval in milliseconds (default `60000`).                                               |
 | `stateFile`          | Path to cached state JSON (default `./lastState.json`).                                           |
-| `ignoredFields`      | Object of field names to ignore for sending webhooks (e.g., `{"fps": true, "ping": true}`). Case-insensitive. |
-| `games[]`            | Array of game definitions.                                                                         |
+| `ignoredFields`      | Object of field names or paths to ignore for webhook notifications. Case-insensitive.             |
+| `games[]`            | Array of game definitions.                                                                        |
 | `games[].name`       | Friendly game name (used in logs and webhook title).                                              |
 | `games[].universeId` | Roblox universe ID for the experience.                                                            |
 | `games[].placeId`    | Place ID used by server and icon endpoints.                                                       |
-| `games[].iconSize`   | Icon size (`50x50`, `128x128`, `150x150`, `256x256`, `420x420`, `512x512`; default `128x128`).     |
+| `games[].iconSize`   | Icon size (`50x50`, `128x128`, `150x150`, `256x256`, `420x420`, `512x512`; default `128x128`).    |
 | `games[].webhookUrl` | Discord webhook URL; required to send notifications for this game.                                |
 | `games[].disabled`   | Set `true` to skip tracking the game.                                                             |
 | `games[].endpoints`  | Toggle specific endpoints (`metadata`, `media`, `playability`, `servers`, `gamepasses`, `developerproducts`, `badges`, `icon`). |
 
 All endpoint toggles default to `false` if omitted.
+
+### Ignored Fields
+#### Simple Check
+Ignore **any occurrence** of a field with this name:
+```json
+"ignoredFields": {
+  "fps": true,                // Ignores fps anywhere (servers, nested objects)
+  "ping": true,               // Ignores ping anywhere
+  "nextPageCursor": true,     // Ignores cursor anywhere
+  "developerproducts": true   // Ignores the developerproducts endpoint (top level key)
+}
+```
+
+To disable an endpoint completely on a specific game only, you should use the `endpoints` key.
+
+#### Path Check
+Use dot notation to ignore **only** a specific nested field:
+```json
+"ignoredFields": {
+  "developerproducts.developerProducts": true,  // Only the nested array, not cursor
+  "servers.data.playerTokens": true,            // Only player tokens in servers
+  "metadata.data.visits": true                  // Only visit count in metadata
+}
+```
 
 If you need a real example for the config file, the repository includes a default `config.json`.
