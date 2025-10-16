@@ -1,7 +1,12 @@
 let ignoredFields = {};
 
 export function setIgnoredFields(fields) {
-  ignoredFields = fields || {};
+  ignoredFields = {};
+  if (fields) {
+    for (const [key, value] of Object.entries(fields)) {
+      ignoredFields[key.toLowerCase()] = value;
+    }
+  }
 }
 
 function diffCheck(oldObj, newObj) {
