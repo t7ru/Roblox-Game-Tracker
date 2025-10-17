@@ -23,10 +23,27 @@ function isIgnored(key, path = "") {
   const lowerKey = key.toLowerCase();
   const currentPath = path ? `${path}.${lowerKey}` : lowerKey;
   
-  if (ignoredFields.has(lowerKey)) return true;
-  if (ignoredPaths.has(currentPath)) return true;
+  console.log(`Checking if ignored: key="${key}", path="${path}", currentPath="${currentPath}"`);
+  
+  if (ignoredFields.has(lowerKey)) {
+    console.log(`  -> Ignored by field: ${lowerKey}`);
+    return true;
+  }
+
+  if (ignoredPaths.has(currentPath)) {
+    console.log(`  -> Ignored by path: ${currentPath}`);
+    return true;
+  }
+
   for (const ignoredPath of ignoredPaths) {
-    if (currentPath.startsWith(ignoredPath + '.')) return true;
+    if (currentPath.endsWith(ignoredPath) || currentPath.endsWith('.' + ignoredPath)) {
+      console.log(`  -> Ignored by suffix match: ${ignoredPath}`);
+      return true;
+    }
+    if (currentPath.startsWith(ignoredPath + '.')) {
+      console.log(`  -> Ignored by parent path: ${ignoredPath}`);
+      return true;
+    }
   }
   
   return false;
