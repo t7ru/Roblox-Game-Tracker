@@ -32,6 +32,8 @@ async function checkChanges() {
           newState[gameKey][endpointKey] = await fetchJSON(url);
         } catch (err) {
           console.error(`Error fetching ${endpointKey} for ${game.name}:`, err);
+          newState[gameKey][endpointKey] =
+            lastState?.[gameKey]?.[endpointKey] ?? {};
         }
       }
     }
@@ -48,7 +50,9 @@ async function checkChanges() {
       if (!game) continue;
 
       if (!game.webhookUrl) {
-        console.log(`No webhook URL configured for ${game.name}, skipping it...`);
+        console.log(
+          `No webhook URL configured for ${game.name}, skipping it...`,
+        );
         continue;
       }
 
@@ -80,7 +84,9 @@ async function checkChanges() {
       if (gameChanges.media?.data?.new) {
         const newMediaItems = gameChanges.media.data.new;
         const oldMediaItems = gameChanges.media.data.old || [];
-        const oldMediaMap = new Map(oldMediaItems.map((item) => [item.imageId, item]));
+        const oldMediaMap = new Map(
+          oldMediaItems.map((item) => [item.imageId, item]),
+        );
 
         for (const newItem of newMediaItems) {
           if (embeds.length >= 10) break;
@@ -101,7 +107,7 @@ async function checkChanges() {
               } catch (err) {
                 console.error(
                   `Failed to fetch media asset for imageId ${newItem.imageId}:`,
-                  err
+                  err,
                 );
               }
             }
