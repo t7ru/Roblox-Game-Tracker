@@ -15,7 +15,7 @@ export function buildEndpoints(game) {
     endpoints.servers = `https://games.roblox.com/v1/games/${placeId}/servers/0?sortOrder=2&excludeFullGames=false&limit=10`;
   }
   if (enabledEndpoints?.gamepasses) {
-    endpoints.gamepasses = `https://games.roblox.com/v1/games/${universeId}/game-passes?limit=10&sortOrder=1`;
+    endpoints.gamepasses = `https://apis.roblox.com/game-passes/v1/universes/${universeId}/game-passes?pageSize=100`;
   }
   if (enabledEndpoints?.developerproducts) {
     endpoints.developerproducts = `https://apis.roblox.com/developer-products/v2/universes/${universeId}/developerproducts?limit=100`;
@@ -24,7 +24,14 @@ export function buildEndpoints(game) {
     endpoints.badges = `https://badges.roblox.com/v1/universes/${universeId}/badges?limit=100&sortBy=Rank`;
   }
   if (enabledEndpoints?.icon) {
-    const validSizes = ["50x50", "128x128", "150x150", "256x256", "420x420", "512x512"];
+    const validSizes = [
+      "50x50",
+      "128x128",
+      "150x150",
+      "256x256",
+      "420x420",
+      "512x512",
+    ];
     const size = validSizes.includes(iconSize) ? iconSize : "128x128";
     endpoints.icon = `https://thumbnails.roblox.com/v1/places/gameicons?placeIds=${placeId}&size=${size}&format=Png&isCircular=false`;
   }
