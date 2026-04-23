@@ -32,9 +32,26 @@ export function buildEndpoints(game) {
       "420x420",
       "512x512",
     ];
-    const size = validSizes.includes(iconSize) ? iconSize : "128x128";
+    const size =
+      iconSize === "1024x1024"
+        ? "512x512"
+        : validSizes.includes(iconSize)
+          ? iconSize
+          : "128x128";
     endpoints.icon = `https://thumbnails.roblox.com/v1/places/gameicons?placeIds=${placeId}&size=${size}&format=Png&isCircular=false`;
   }
 
   return endpoints;
+}
+
+export function remapCdn1024(json, iconSize) {
+  if (iconSize !== "1024x1024" || !json?.data) return;
+  for (const item of json.data) {
+    if (item.imageUrl) {
+      item.imageUrl = item.imageUrl.replace(
+        /\/\d+\/\d+(\/Image\/)/,
+        "/1024/1024$1",
+      );
+    }
+  }
 }

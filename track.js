@@ -1,5 +1,5 @@
 import { loadConfig, loadState, saveState } from "./src/config.js";
-import { buildEndpoints } from "./src/endpoints.js";
+import { buildEndpoints, remapCdn1024 } from "./src/endpoints.js";
 import { diff, setIgnoredFields } from "./src/diff.js";
 import { formatDiffMessage } from "./src/formatters.js";
 import { fetchJSON, fetchPlayerAvatars } from "./src/fetchers.js";
@@ -29,7 +29,11 @@ async function checkChanges() {
       const endpoints = buildEndpoints(game);
       for (const [endpointKey, url] of Object.entries(endpoints)) {
         try {
-          newState[gameKey][endpointKey] = await fetchJSON(url);
+          const json = await fetchJSON(url);
+          if (endpointKey === "icon") {
+            remapCdn1024(json, game.iconSize);
+          }
+          newState[gameKey][endpointKey] = json;
         } catch (err) {
           console.error(`Error fetching ${endpointKey} for ${game.name}:`, err);
           newState[gameKey][endpointKey] =
