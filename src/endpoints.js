@@ -1,57 +1,226 @@
-export function buildEndpoints(game) {
-	const endpoints = {};
-	const { universeId, placeId, endpoints: enabledEndpoints, iconSize } = game;
+import { roblox, robloxPages } from "./fetchers.js";
 
-	if (enabledEndpoints?.metadata) {
-		endpoints.metadata = `https://games.roblox.com/v1/games?universeIds=${universeId}`;
-	}
-	if (enabledEndpoints?.media) {
-		endpoints.media = `https://games.roblox.com/v2/games/${universeId}/media?fetchAllExperienceRelatedMedia=true`;
-	}
-	if (enabledEndpoints?.playability) {
-		endpoints.playability = `https://games.roblox.com/v1/games/multiget-playability-status?universeIds=${universeId}`;
-	}
-	if (enabledEndpoints?.servers) {
-		endpoints.servers = `https://games.roblox.com/v1/games/${placeId}/servers/0?sortOrder=2&excludeFullGames=false&limit=10`;
-	}
-	if (enabledEndpoints?.gamepasses) {
-		endpoints.gamepasses = `https://apis.roblox.com/game-passes/v1/universes/${universeId}/game-passes?pageSize=100`;
-	}
-	if (enabledEndpoints?.developerproducts) {
-		endpoints.developerproducts = `https://apis.roblox.com/developer-products/v2/universes/${universeId}/developerproducts?limit=100`;
-	}
-	if (enabledEndpoints?.badges) {
-		endpoints.badges = `https://badges.roblox.com/v1/universes/${universeId}/badges?limit=100&sortBy=Rank`;
-	}
-	if (enabledEndpoints?.icon) {
-		const validSizes = [
-			"50x50",
-			"128x128",
-			"150x150",
-			"256x256",
-			"420x420",
-			"512x512",
-		];
+const ICON_SIZES = new Set([
+	"50x50",
+	"128x128",
+	"150x150",
+	"256x256",
+	"420x420",
+	"512x512",
+]);
+
+export function buildFetches(game, hasCookie, hasCloudApi) {
+	const {
+		universeId: uid,
+		placeId: pid,
+		endpoints: on = {},
+		iconSize,
+	} = game;
+	const fetches = [];
+	const cookie = hasCookie ? "cookie" : "none";
+	const cloud = hasCloudApi ? "cloudapi" : "none";
+	const now = () => new Date().toISOString();
+
+	if (on.metadata)
+		fetches.push({
+			key: "metadata",
+			run: () =>
+				roblox(`https://games.roblox.com/v1/games?universeIds=${uid}`),
+		});
+	if (on.media)
+		fetches.push({
+			key: "media",
+			run: () =>
+				roblox(
+					`https://games.roblox.com/v2/games/${uid}/media?fetchAllExperienceRelatedMedia=true`,
+				),
+		});
+	if (on.playability)
+		fetches.push({
+			key: "playability",
+			run: () =>
+				roblox(
+					`https://games.roblox.com/v1/games/multiget-playability-status?universeIds=${uid}`,
+					{ auth: cookie },
+				),
+		});
+	if (on.servers)
+		fetches.push({
+			key: "servers",
+			run: () =>
+				roblox(
+					`https://games.roblox.com/v1/games/${pid}/servers/0?sortOrder=2&excludeFullGames=false&limit=50`,
+				),
+		});
+	if (on.votes)
+		fetches.push({
+			key: "votes",
+			run: () =>
+				roblox(
+					`https://games.roblox.com/v1/games/votes?universeIds=${uid}`,
+				),
+		});
+	if (on.productinfo)
+		fetches.push({
+			key: "productinfo",
+			run: () =>
+				roblox(
+					`https://games.roblox.com/v1/games/games-product-info?universeIds=${uid}`,
+				),
+		});
+	if (on.subplaces)
+		fetches.push({
+			key: "subplaces",
+			run: async () => ({
+				data: await robloxPages(
+					`https://develop.roblox.com/v2/universes/${uid}/places?limit=100`,
+					{ auth: cookie, pick: (j) => j.data ?? [] },
+				),
+			}),
+		});
+	if (on.virtualevents)
+		fetches.push({
+			key: "virtualevents",
+			run: () =>
+				roblox(
+					`https://apis.roblox.com/virtual-events/v1/universes/${uid}/virtual-events?fromUtc=${encodeURIComponent(now())}`,
+				),
+		});
+	if (on.pastevents)
+		fetches.push({
+			key: "pastevents",
+			run: () =>
+				roblox(
+					`https://apis.roblox.com/virtual-events/v2/universes/${uid}/experience-events?endsBefore=${encodeURIComponent(now())}&visibility=public&limit=40`,
+				),
+		});
+	if (on.agerecommendation)
+		fetches.push({
+			key: "agerecommendation",
+			run: () =>
+				roblox(
+					"https://apis.roblox.com/experience-guidelines-api/experience-guidelines/get-age-recommendation",
+					{ method: "POST", body: { universeId: Number(uid) } },
+				),
+		});
+	if (on.gamepasses)
+		fetches.push({
+			key: "gamepasses",
+			run: async () => ({
+				gamePasses: await robloxPages(
+					`https://apis.roblox.com/game-passes/v1/universes/${uid}/game-passes?pageSize=100&passView=Full`,
+					{ pick: (j) => j.gamePasses ?? [], param: "pageToken" },
+				),
+			}),
+		});
+	if (on.developerproducts)
+		fetches.push({
+			key: "developerproducts",
+			run: async () => ({
+				developerProducts: await robloxPages(
+					`https://apis.roblox.com/developer-products/v2/universes/${uid}/developerproducts?limit=100`,
+					{ pick: (j) => j.developerProducts ?? [] },
+				),
+			}),
+		});
+	if (on.experiencestore)
+		fetches.push({
+			key: "experiencestore",
+			run: async () => ({
+				developerProducts: await robloxPages(
+					`https://apis.roblox.com/experience-store/v1/universes/${uid}/store?limit=100`,
+					{ auth: cookie, pick: (j) => j.developerProducts ?? [] },
+				),
+			}),
+		});
+	if (on.badges)
+		fetches.push({
+			key: "badges",
+			run: async () => ({
+				data: await robloxPages(
+					`https://badges.roblox.com/v1/universes/${uid}/badges?limit=100&sortOrder=Asc`,
+					{ pick: (j) => j.data ?? [] },
+				),
+			}),
+		});
+	if (on.placeversions)
+		fetches.push({
+			key: "placeversions",
+			run: () =>
+				roblox("https://develop.roblox.com/v1/assets/latest-versions", {
+					method: "POST",
+					auth: "cookie",
+					body: {
+						assetIds: [Number(pid)],
+						versionStatus: "Published",
+					},
+				}),
+		});
+	if (on.subscriptions)
+		fetches.push({
+			key: "subscriptions",
+			run: () =>
+				roblox(
+					`https://apis.roblox.com/v1/subscriptions/active-subscription-products?subscriptionProductType=1&subscriptionProviderId=${uid}`,
+					{ auth: cookie },
+				),
+		});
+	if (on.clouduniverse)
+		fetches.push({
+			key: "clouduniverse",
+			run: () =>
+				roblox(`https://apis.roblox.com/cloud/v2/universes/${uid}`, {
+					auth: "cloudapi",
+				}),
+		});
+	if (on.serverrestarts)
+		fetches.push({
+			key: "serverrestarts",
+			run: () =>
+				roblox(
+					`https://apis.roblox.com/server-management/v1/universes/${uid}/restarts`,
+					{ auth: "cloudapi" },
+				),
+		});
+	if (on.icon) {
 		const size =
 			iconSize === "1024x1024"
 				? "512x512"
-				: validSizes.includes(iconSize)
+				: ICON_SIZES.has(iconSize)
 					? iconSize
 					: "128x128";
-		endpoints.icon = `https://thumbnails.roblox.com/v1/places/gameicons?placeIds=${placeId}&size=${size}&format=Png&isCircular=false`;
+		fetches.push({
+			key: "icon",
+			run: () =>
+				roblox(
+					`https://thumbnails.roblox.com/v1/places/gameicons?placeIds=${pid}&size=${size}&format=Png&isCircular=false`,
+				),
+		});
 	}
 
-	return endpoints;
+	return fetches;
+}
+
+export async function fetchCreatorGames(creator) {
+	if (!creator?.id) return { data: [] };
+	const base =
+		creator.type === "Group"
+			? `https://games.roblox.com/v2/groups/${creator.id}/gamesV2?accessFilter=2&limit=50&sortOrder=Desc`
+			: `https://games.roblox.com/v2/users/${creator.id}/games?accessFilter=2&limit=50&sortOrder=Asc`;
+	return {
+		data: await robloxPages(base, {
+			auth: "cookie",
+			pick: (j) => j.data ?? [],
+		}),
+	};
 }
 
 export function remapCdn1024(json, iconSize) {
 	if (iconSize !== "1024x1024" || !json?.data) return;
 	for (const item of json.data) {
-		if (item.imageUrl) {
-			item.imageUrl = item.imageUrl.replace(
-				/\/\d+\/\d+(\/Image\/)/,
-				"/1024/1024$1",
-			);
-		}
+		item.imageUrl = item.imageUrl?.replace(
+			/\/\d+\/\d+(\/Image\/)/,
+			"/1024/1024$1",
+		);
 	}
 }

@@ -1,6 +1,8 @@
 {
 	"interval": 60000,
 	"stateFile": "./lastState.json",
+	"cookie": "",
+	"cloudapi": "",
 	"ignoredFields": {
 		"fps": true,
 		"ping": true
@@ -21,7 +23,19 @@
 				"gamepasses": true,
 				"developerproducts": true,
 				"badges": true,
-				"icon": true
+				"icon": true,
+				"votes": true,
+				"subplaces": true,
+				"virtualevents": true,
+				"pastevents": true,
+				"agerecommendation": true,
+				"productinfo": true,
+				"placeversions": true,
+				"experiencestore": true,
+				"subscriptions": true,
+				"creatorgames": true,
+				"clouduniverse": true,
+				"serverrestarts": false
 			}
 		},
 		{
