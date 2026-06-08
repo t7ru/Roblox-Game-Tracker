@@ -1,6 +1,6 @@
 import { roblox, robloxPages } from "./fetchers.js";
 
-const ICON_SIZES = new Set([
+export const ICON_SIZES = new Set([
 	"50x50",
 	"128x128",
 	"150x150",
@@ -8,6 +8,27 @@ const ICON_SIZES = new Set([
 	"420x420",
 	"512x512",
 ]);
+
+export const EVENT_THUMB_SIZES = new Set([
+	"150x150",
+	"250x250",
+	"384x216",
+	"420x420",
+	"480x270",
+	"512x512",
+	"576x324",
+	"768x432",
+]);
+
+export function resolveIconSize(size) {
+	return ICON_SIZES.has(size) ? size : "128x128";
+}
+
+export function resolveEventThumbSize(size) {
+	return EVENT_THUMB_SIZES.has(size) ? size : "420x420";
+}
+
+export const BADGE_ICON_SIZE = "150x150";
 
 export function buildFetches(game, hasCookie, hasCloudApi) {
 	const {
@@ -184,11 +205,7 @@ export function buildFetches(game, hasCookie, hasCloudApi) {
 		});
 	if (on.icon) {
 		const size =
-			iconSize === "1024x1024"
-				? "512x512"
-				: ICON_SIZES.has(iconSize)
-					? iconSize
-					: "128x128";
+			iconSize === "1024x1024" ? "512x512" : resolveIconSize(iconSize);
 		fetches.push({
 			key: "icon",
 			run: () =>

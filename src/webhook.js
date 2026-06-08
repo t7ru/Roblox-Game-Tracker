@@ -1,25 +1,11 @@
-export async function sendWebhook(
-	webhookUrl,
-	gameName,
-	content,
-	messages,
-	embeds,
-) {
-	if (!webhookUrl) return;
+function chunk(arr, size) {
+	const out = [];
+	for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+	return out;
+}
 
-	const payload = {
-		content:
-			content.length > 1900 ? content.substring(0, 1900) + "..." : content,
-	};
-
-	if (embeds.length > 0) {
-		payload.embeds = embeds;
-	}
-
-	if (content.length <= 1900) {
-		await dispatch(webhookUrl, payload);
-		return;
-	}
+function contentChunks(gameName, content, messages) {
+	if (content.length <= 1900) return [content];
 
 	const chunks = [];
 	let current = `**[${gameName}] Changes Detected**\n**----------------**\n`;
@@ -33,14 +19,40 @@ export async function sendWebhook(
 		}
 	}
 	if (current.trim()) chunks.push(current);
+	return chunks;
+}
 
-	for (let i = 0; i < chunks.length; i++) {
-		const chunkPayload = { content: chunks[i] };
-		if (i === 0 && embeds.length > 0) {
-			chunkPayload.embeds = embeds;
+export async function sendWebhook(
+	webhookUrl,
+	gameName,
+	content,
+	messages,
+	embeds,
+) {
+	if (!webhookUrl) return;
+
+	const texts = contentChunks(gameName, content, messages);
+	const embedBatches = embeds.length ? chunk(embeds, 10) : [[]];
+
+	const payloads = [
+		{
+			content: texts[0],
+			...(embedBatches[0]?.length ? { embeds: embedBatches[0] } : {}),
+		},
+	];
+
+	for (let i = 1; i < texts.length; i++) {
+		payloads.push({ content: texts[i] });
+	}
+	for (let i = 1; i < embedBatches.length; i++) {
+		payloads.push({ embeds: embedBatches[i] });
+	}
+
+	for (let i = 0; i < payloads.length; i++) {
+		await dispatch(webhookUrl, payloads[i]);
+		if (i < payloads.length - 1) {
+			await new Promise((resolve) => setTimeout(resolve, 100));
 		}
-		await dispatch(webhookUrl, chunkPayload);
-		await new Promise((resolve) => setTimeout(resolve, 100));
 	}
 }
 

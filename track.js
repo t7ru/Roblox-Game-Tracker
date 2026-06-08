@@ -6,7 +6,8 @@ import {
 } from "./src/endpoints.js";
 import { diff, setIgnoredFields } from "./src/diff.js";
 import { formatDiffMessage } from "./src/formatters.js";
-import { initAuth, fetchJSON, fetchPlayerAvatars } from "./src/fetchers.js";
+import { initAuth } from "./src/fetchers.js";
+import { buildImageEmbeds } from "./src/embeds.js";
 import { sendWebhook } from "./src/webhook.js";
 
 const config = loadConfig();
@@ -89,85 +90,13 @@ async function checkChanges() {
 			let content = `**[${game.name}] Changes Detected**\n**----------------**\n`;
 			content += messages.join("\n");
 
-			const embeds = [];
-
-			if (newState[gameKey].servers?.data) {
-				const tokens = newState[gameKey].servers.data
-					.flatMap((s) => s.playerTokens ?? [])
-					.filter(Boolean);
-				if (tokens.length) {
-					for (const avatar of (
-						await fetchPlayerAvatars(tokens)
-					).slice(0, 10)) {
-						if (embeds.length >= 10) break;
-						embeds.push({
-							title: `Player in ${game.name}`,
-							image: { url: avatar.imageUrl },
-							color: 0x00ff00,
-						});
-					}
-				}
-			}
-
-			if (gameChanges.media?.data?.new) {
-				const oldMap = new Map(
-					(gameChanges.media.data.old ?? []).map((item) => [
-						item.imageId,
-						item,
-					]),
-				);
-				for (const newItem of gameChanges.media.data.new) {
-					if (embeds.length >= 10) break;
-					const oldItem = oldMap.get(newItem.imageId);
-					if (
-						oldItem &&
-						JSON.stringify(newItem) === JSON.stringify(oldItem)
-					)
-						continue;
-					if (newItem.assetType !== "Image" || !newItem.imageId)
-						continue;
-					try {
-						const asset = await fetchJSON(
-							`https://assetdelivery.roblox.com/v2/assetId/${newItem.imageId}`,
-						);
-						const url = asset.locations?.[0]?.location;
-						if (url)
-							embeds.push({
-								title: `Media Updated - ${game.name}`,
-								image: { url },
-								color: 0x0000ff,
-							});
-					} catch (err) {
-						console.error(
-							`Failed to fetch media asset ${newItem.imageId}:`,
-							err,
-						);
-					}
-				}
-			}
-
-			if (gameChanges.icon?.data) {
-				let newIconUrl;
-				let oldIconUrl;
-				if (gameChanges.icon.data.new) {
-					newIconUrl = gameChanges.icon.data.new[0]?.imageUrl;
-					oldIconUrl = gameChanges.icon.data.old?.[0]?.imageUrl;
-				} else if (gameChanges.icon.data[0]?.imageUrl) {
-					newIconUrl = gameChanges.icon.data[0].imageUrl.new;
-					oldIconUrl = gameChanges.icon.data[0].imageUrl.old;
-				}
-				if (
-					newIconUrl &&
-					newIconUrl !== oldIconUrl &&
-					embeds.length < 10
-				) {
-					embeds.push({
-						title: `Icon Updated - ${game.name}`,
-						image: { url: newIconUrl },
-						color: 0xffff00,
-					});
-				}
-			}
+			const embeds = await buildImageEmbeds(
+				gameChanges,
+				newState,
+				gameKey,
+				game.name,
+				game.eventThumbSize,
+			);
 
 			await sendWebhook(
 				game.webhookUrl,

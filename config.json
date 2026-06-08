@@ -12,7 +12,8 @@
 			"name": "ALTER EGO",
 			"universeId": "7419937615",
 			"placeId": "78515341506665",
-			"iconSize": "512x512",
+			"iconSize": "1024x1024",
+			"eventThumbSize": "768x432",
 			"webhookUrl": "https://discord.com/api/webhooks/YOURWEBHOOKID/YOURWEBHOOKTOKEN",
 			"disabled": false,
 			"endpoints": {

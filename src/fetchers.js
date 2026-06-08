@@ -59,6 +59,59 @@ export async function fetchJSON(url) {
 	return res.json();
 }
 
+async function thumbnailBatch(requests) {
+	const res = await fetch("https://thumbnails.roblox.com/v1/batch", {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(requests),
+	});
+	const data = await res.json();
+	return data.data ?? [];
+}
+
+export async function fetchAssetThumbnails(assetIds, size) {
+	const map = new Map();
+	for (let i = 0; i < assetIds.length; i += 100) {
+		const chunk = assetIds.slice(i, i + 100);
+		try {
+			const json = await fetchJSON(
+				`https://thumbnails.roblox.com/v1/assets?assetIds=${chunk.join(",")}&size=${size}&format=Png`,
+			);
+			for (const row of json.data ?? []) {
+				if (row.state === "Completed" && row.imageUrl)
+					map.set(row.targetId, row.imageUrl);
+			}
+		} catch (err) {
+			console.error("Error fetching asset thumbnails:", err);
+		}
+	}
+	return map;
+}
+
+export async function fetchThumbnails(items) {
+	const map = new Map();
+	for (let i = 0; i < items.length; i += 100) {
+		const chunk = items.slice(i, i + 100);
+		const requests = chunk.map((item) => ({
+			requestId: String(item.targetId),
+			targetId: item.targetId,
+			type: item.type,
+			size: item.size ?? "420x420",
+			format: "Png",
+			isCircular: false,
+		}));
+		try {
+			for (const row of await thumbnailBatch(requests)) {
+				if (row.state === "Completed" && row.imageUrl)
+					map.set(Number(row.requestId), row.imageUrl);
+			}
+		} catch (err) {
+			console.error("Error fetching thumbnails:", err);
+		}
+	}
+	return map;
+}
+
 export async function fetchPlayerAvatars(playerTokens) {
 	if (!playerTokens?.length) return [];
 
@@ -68,20 +121,11 @@ export async function fetchPlayerAvatars(playerTokens) {
 			token,
 			type: "AvatarHeadShot",
 			size: "100x100",
-			format: null,
+			format: "Png",
 			isCircular: false,
 		}));
-
-		const res = await fetch("https://thumbnails.roblox.com/v1/batch", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify(requests),
-		});
-		const data = await res.json();
-		return (
-			data.data?.filter(
-				(item) => item.state === "Completed" && item.imageUrl,
-			) ?? []
+		return (await thumbnailBatch(requests)).filter(
+			(item) => item.state === "Completed" && item.imageUrl,
 		);
 	} catch (err) {
 		console.error("Error fetching player avatars:", err);
