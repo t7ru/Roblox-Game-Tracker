@@ -113,14 +113,21 @@ export function diff(oldObj = {}, newObj = {}, path = "") {
 			let idField = "id";
 			if (newArr.length > 0 && newArr[0]?.ProductId !== undefined) {
 				idField = "ProductId";
-			} else if (oldArr.length > 0 && oldArr[0]?.ProductId !== undefined) {
+			} else if (
+				oldArr.length > 0 &&
+				oldArr[0]?.ProductId !== undefined
+			) {
 				idField = "ProductId";
 			}
 
-			const getId = (item) =>
-				item && item[idField] !== undefined && item[idField] !== null
-					? item[idField]
-					: undefined;
+			const getId = (item) => {
+				const raw =
+					item?.[idField] ??
+					(item?.id != null && idField === "id"
+						? item.id
+						: undefined);
+				return raw != null ? String(raw) : undefined;
+			};
 
 			const oldMap = new Map(
 				oldArr

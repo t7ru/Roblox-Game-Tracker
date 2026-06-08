@@ -4,6 +4,8 @@ import {
 	fetchCreatorGames,
 	remapCdn1024,
 } from "./src/endpoints.js";
+import { evaluate } from "./src/confirm.js";
+import { canonicalize } from "./src/normalize.js";
 import { diff, setIgnoredFields } from "./src/diff.js";
 import { formatDiffMessage } from "./src/formatters.js";
 import { initAuth } from "./src/fetchers.js";
@@ -29,22 +31,22 @@ async function fetchGameState(game) {
 		try {
 			const json = await run();
 			if (key === "icon") remapCdn1024(json, game.iconSize);
-			state[key] = json;
+			state[key] = canonicalize(json);
 		} catch (err) {
 			console.error(`Error fetching ${key} for ${game.name}:`, err);
-			state[key] = lastState?.[gameKey]?.[key] ?? {};
+			return null;
 		}
 	}
 
 	if (game.endpoints?.creatorgames && hasCookie) {
 		try {
 			const creator = state.metadata?.data?.[0]?.creator;
-			state.creatorgames = creator
-				? await fetchCreatorGames(creator)
-				: { data: [] };
+			state.creatorgames = canonicalize(
+				creator ? await fetchCreatorGames(creator) : { data: [] },
+			);
 		} catch (err) {
 			console.error(`Error fetching creatorgames for ${game.name}:`, err);
-			state.creatorgames = lastState?.[gameKey]?.creatorgames ?? {};
+			return null;
 		}
 	}
 
@@ -54,30 +56,42 @@ async function fetchGameState(game) {
 async function checkChanges() {
 	try {
 		console.log(`[${new Date().toISOString()}] Checking for changes...`);
-		const newState = {};
+		let stateDirty = false;
 
 		for (const game of config.games) {
 			if (game.disabled === true) {
 				console.log(`Skipping ${game.name} (disabled)`);
 				continue;
 			}
-			newState[`${game.name}_${game.universeId}`] =
-				await fetchGameState(game);
-		}
 
-		const changes = diff(lastState, newState);
-		if (Object.keys(changes).length === 0) {
-			console.log("No changes detected.");
-			return;
-		}
-
-		for (const [gameKey, gameChanges] of Object.entries(changes)) {
-			const universeId = gameKey.split("_").pop();
-			const game = config.games.find((g) => g.universeId === universeId);
-			if (!game?.webhookUrl) {
-				console.log(
-					`No webhook URL configured for ${game?.name ?? gameKey}, skipping...`,
+			const gameKey = `${game.name}_${game.universeId}`;
+			const candidate = await fetchGameState(game);
+			if (!candidate) {
+				console.warn(
+					`Skipping ${game.name} this poll — incomplete fetch`,
 				);
+				continue;
+			}
+
+			const committed = lastState[gameKey] ?? {};
+			const result = evaluate(gameKey, committed, candidate);
+
+			if (result.status === "unchanged") continue;
+
+			if (result.status === "pending") {
+				console.log(`Changes pending confirmation for ${game.name}`);
+				continue;
+			}
+
+			const gameChanges = diff(committed, candidate);
+			if (!Object.keys(gameChanges).length) continue;
+
+			if (!game.webhookUrl) {
+				console.log(
+					`No webhook URL configured for ${game.name}, skipping notification`,
+				);
+				lastState[gameKey] = candidate;
+				stateDirty = true;
 				continue;
 			}
 
@@ -92,10 +106,9 @@ async function checkChanges() {
 
 			const embeds = await buildImageEmbeds(
 				gameChanges,
-				newState,
+				{ [gameKey]: candidate },
 				gameKey,
-				game.name,
-				game.eventThumbSize,
+				game,
 			);
 
 			await sendWebhook(
@@ -105,11 +118,14 @@ async function checkChanges() {
 				messages,
 				embeds,
 			);
-			console.log(`Changes detected for ${game.name}, webhook sent.`);
+			console.log(`Changes confirmed for ${game.name}, webhook sent.`);
+
+			lastState[gameKey] = candidate;
+			stateDirty = true;
 		}
 
-		saveState(STATE_FILE, newState);
-		lastState = newState;
+		if (stateDirty) saveState(STATE_FILE, lastState);
+		else console.log("No confirmed changes.");
 	} catch (err) {
 		console.error("Error checking changes:", err);
 	}

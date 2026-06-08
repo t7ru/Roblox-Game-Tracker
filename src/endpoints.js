@@ -40,7 +40,6 @@ export function buildFetches(game, hasCookie, hasCloudApi) {
 	const fetches = [];
 	const cookie = hasCookie ? "cookie" : "none";
 	const cloud = hasCloudApi ? "cloudapi" : "none";
-	const now = () => new Date().toISOString();
 
 	if (on.metadata)
 		fetches.push({
@@ -104,16 +103,18 @@ export function buildFetches(game, hasCookie, hasCloudApi) {
 			key: "virtualevents",
 			run: () =>
 				roblox(
-					`https://apis.roblox.com/virtual-events/v1/universes/${uid}/virtual-events?fromUtc=${encodeURIComponent(now())}`,
+					`https://apis.roblox.com/virtual-events/v1/universes/${uid}/virtual-events`,
 				),
 		});
 	if (on.pastevents)
 		fetches.push({
 			key: "pastevents",
-			run: () =>
-				roblox(
-					`https://apis.roblox.com/virtual-events/v2/universes/${uid}/experience-events?endsBefore=${encodeURIComponent(now())}&visibility=public&limit=40`,
+			run: async () => ({
+				data: await robloxPages(
+					`https://apis.roblox.com/virtual-events/v2/universes/${uid}/experience-events?endsBefore=${encodeURIComponent(new Date().toISOString())}&visibility=public&limit=100`,
+					{ pick: (j) => j.data ?? [] },
 				),
+			}),
 		});
 	if (on.agerecommendation)
 		fetches.push({
@@ -240,4 +241,14 @@ export function remapCdn1024(json, iconSize) {
 			"/1024/1024$1",
 		);
 	}
+}
+
+export async function fetchGameIcon(placeId, iconSize) {
+	const size =
+		iconSize === "1024x1024" ? "512x512" : resolveIconSize(iconSize);
+	const json = await roblox(
+		`https://thumbnails.roblox.com/v1/places/gameicons?placeIds=${placeId}&size=${size}&format=Png&isCircular=false`,
+	);
+	remapCdn1024(json, iconSize);
+	return json.data?.[0]?.imageUrl;
 }
