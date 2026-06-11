@@ -42,6 +42,7 @@ export function canonicalize(value) {
 
 	const out = {};
 	for (const [key, val] of Object.entries(value)) {
+		if (key === "userRsvpStatus") continue;
 		if (
 			key === "imageUrl" &&
 			typeof val === "string" &&

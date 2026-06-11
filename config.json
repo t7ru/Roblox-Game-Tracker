@@ -28,7 +28,6 @@
 				"votes": true,
 				"subplaces": true,
 				"virtualevents": true,
-				"pastevents": true,
 				"agerecommendation": true,
 				"productinfo": true,
 				"placeversions": true,

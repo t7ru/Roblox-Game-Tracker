@@ -30,6 +30,18 @@ export function resolveEventThumbSize(size) {
 
 export const BADGE_ICON_SIZE = "150x150";
 
+function fetchExperienceEvents(uid, params) {
+	const qs = new URLSearchParams({
+		visibility: "public",
+		limit: "100",
+		...params,
+	});
+	return robloxPages(
+		`https://apis.roblox.com/virtual-events/v2/universes/${uid}/experience-events?${qs}`,
+		{ pick: (j) => j.data ?? [] },
+	);
+}
+
 export function buildFetches(game, hasCookie, hasCloudApi) {
 	const {
 		universeId: uid,
@@ -101,20 +113,21 @@ export function buildFetches(game, hasCookie, hasCloudApi) {
 	if (on.virtualevents)
 		fetches.push({
 			key: "virtualevents",
-			run: () =>
-				roblox(
-					`https://apis.roblox.com/virtual-events/v1/universes/${uid}/virtual-events`,
-				),
-		});
-	if (on.pastevents)
-		fetches.push({
-			key: "pastevents",
-			run: async () => ({
-				data: await robloxPages(
-					`https://apis.roblox.com/virtual-events/v2/universes/${uid}/experience-events?endsBefore=${encodeURIComponent(new Date().toISOString())}&visibility=public&limit=100`,
-					{ pick: (j) => j.data ?? [] },
-				),
-			}),
+			run: async () => {
+				const now = new Date().toISOString();
+				const [upcoming, active, past] = await Promise.all([
+					fetchExperienceEvents(uid, { startsAfter: now }),
+					fetchExperienceEvents(uid, {
+						startsBefore: now,
+						endsAfter: now,
+					}),
+					fetchExperienceEvents(uid, { endsBefore: now }),
+				]);
+				const byId = new Map();
+				for (const e of [...upcoming, ...active, ...past])
+					byId.set(String(e.id), e);
+				return { data: [...byId.values()] };
+			},
 		});
 	if (on.agerecommendation)
 		fetches.push({

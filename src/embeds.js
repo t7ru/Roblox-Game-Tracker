@@ -46,7 +46,6 @@ export async function buildImageEmbeds(gameChanges, newState, gameKey, game) {
 	const { name: gameName, eventThumbSize, placeId, iconSize } = game;
 	const thumbSize = resolveEventThumbSize(eventThumbSize);
 	const embeds = [];
-	const seenEvents = new Set();
 
 	if (gameChanges.servers && newState[gameKey].servers?.data) {
 		const tokens = newState[gameKey].servers.data
@@ -78,18 +77,13 @@ export async function buildImageEmbeds(gameChanges, newState, gameKey, game) {
 		if (url) push(embeds, `Icon Updated - ${gameName}`, url, 0xffff00);
 	}
 
-	for (const key of ["virtualevents", "pastevents"]) {
-		if (!gameChanges[key]) continue;
-		const events = addedItems(gameChanges[key].data);
+	if (gameChanges.virtualevents) {
+		const events = addedItems(gameChanges.virtualevents.data);
 		const thumbs = await fetchAssetThumbnails(
 			events.map((e) => e.thumbnails?.[0]?.mediaId).filter(Boolean),
 			thumbSize,
 		);
 		for (const event of events) {
-			const id = event.id != null ? String(event.id) : "";
-			if (!id || seenEvents.has(id)) continue;
-			seenEvents.add(id);
-
 			const mediaId = event.thumbnails?.[0]?.mediaId;
 			if (!mediaId) continue;
 			const title = event.displayTitle || event.title || "Event";
