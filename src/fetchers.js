@@ -43,12 +43,13 @@ export async function robloxPages(
 	{ auth = "none", pick, param = "cursor" },
 ) {
 	const items = [];
+	const pageUrl = new URL(url);
 	for (;;) {
-		const json = await roblox(url, { auth });
+		const json = await roblox(pageUrl.toString(), { auth });
 		items.push(...pick(json));
 		const next = json.nextPageCursor ?? json.nextPageToken;
 		if (!next) break;
-		url = `${url}${url.includes("?") ? "&" : "?"}${param}=${encodeURIComponent(next)}`;
+		pageUrl.searchParams.set(param, next);
 	}
 	return items;
 }
