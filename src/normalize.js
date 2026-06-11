@@ -5,6 +5,7 @@ const ID_KEYS = new Set([
 	"placeid",
 	"badgeid",
 	"assetid",
+	"imageid",
 	"targetid",
 ]);
 
@@ -14,9 +15,10 @@ export function cdnImageHash(url) {
 	return m?.[1] ?? url;
 }
 
-function itemId(item) {
+export function itemId(item) {
 	if (item?.id != null) return String(item.id);
 	if (item?.ProductId != null) return String(item.ProductId);
+	if (item?.imageId != null) return String(item.imageId);
 	return null;
 }
 

@@ -31,10 +31,10 @@ function collectMediaItems(gameChanges) {
 	);
 
 	if (data.old && data.new) {
-		const oldMap = new Map(data.old.map((i) => [i.imageId, i]));
+		const oldMap = new Map(data.old.map((i) => [String(i.imageId), i]));
 		for (const item of data.new) {
 			if (item.assetType !== "Image" || !item.imageId) continue;
-			const prev = oldMap.get(item.imageId);
+			const prev = oldMap.get(String(item.imageId));
 			if (!prev || JSON.stringify(prev) !== JSON.stringify(item))
 				items.push(item);
 		}

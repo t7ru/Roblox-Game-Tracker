@@ -1,3 +1,5 @@
+import { itemId } from "./normalize.js";
+
 let ignoredFields = new Set();
 let ignoredPaths = new Set();
 
@@ -110,24 +112,7 @@ export function diff(oldObj = {}, newObj = {}, path = "") {
 			const oldArr = Array.isArray(oldVal) ? oldVal : [];
 			const newArr = Array.isArray(newVal) ? newVal : [];
 
-			let idField = "id";
-			if (newArr.length > 0 && newArr[0]?.ProductId !== undefined) {
-				idField = "ProductId";
-			} else if (
-				oldArr.length > 0 &&
-				oldArr[0]?.ProductId !== undefined
-			) {
-				idField = "ProductId";
-			}
-
-			const getId = (item) => {
-				const raw =
-					item?.[idField] ??
-					(item?.id != null && idField === "id"
-						? item.id
-						: undefined);
-				return raw != null ? String(raw) : undefined;
-			};
+			const getId = (item) => itemId(item);
 
 			const oldMap = new Map(
 				oldArr
