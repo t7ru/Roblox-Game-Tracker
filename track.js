@@ -88,18 +88,18 @@ async function checkChanges() {
 					.filter((k) => fullDiff[k])
 					.map((k) => [k, fullDiff[k]]),
 			);
+
+			lastState[gameKey] ??= {};
+			for (const key of result.keys)
+				lastState[gameKey][key] = candidate[key];
+			stateDirty = true;
+
 			if (!Object.keys(gameChanges).length) continue;
 
 			if (!game.webhookUrl) {
 				console.log(
 					`No webhook URL configured for ${game.name}, skipping notification`,
 				);
-				for (const key of result.keys)
-					lastState[gameKey] = {
-						...lastState[gameKey],
-						[key]: candidate[key],
-					};
-				stateDirty = true;
 				continue;
 			}
 
@@ -129,11 +129,6 @@ async function checkChanges() {
 			console.log(
 				`Changes confirmed for ${game.name} (${result.keys.join(", ")}), webhook sent.`,
 			);
-
-			lastState[gameKey] ??= {};
-			for (const key of result.keys)
-				lastState[gameKey][key] = candidate[key];
-			stateDirty = true;
 		}
 
 		if (stateDirty) saveState(STATE_FILE, lastState);

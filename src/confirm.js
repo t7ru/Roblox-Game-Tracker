@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { diff } from "./diff.js";
 
 const pending = new Map();
 
@@ -16,13 +17,12 @@ export function evaluate(gameKey, committed, candidate) {
 	const pend = pending.get(gameKey) ?? new Map();
 
 	for (const key of keys) {
-		const oldFp = fp(committed[key]);
-		const newFp = fp(candidate[key]);
-
-		if (oldFp === newFp) {
+		if (!Object.keys(diff(committed[key], candidate[key], key)).length) {
 			pend.delete(key);
 			continue;
 		}
+
+		const newFp = fp(candidate[key]);
 
 		if (pend.get(key) === newFp) {
 			pend.delete(key);
