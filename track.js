@@ -24,7 +24,6 @@ let lastState = loadState(STATE_FILE);
 setIgnoredFields(config.ignoredFields || {});
 
 async function fetchGameState(game) {
-	const gameKey = `${game.name}_${game.universeId}`;
 	const state = {};
 
 	for (const { key, run } of buildFetches(game, hasCookie, hasCloudApi)) {
@@ -83,14 +82,23 @@ async function checkChanges() {
 				continue;
 			}
 
-			const gameChanges = diff(committed, candidate);
+			const fullDiff = diff(committed, candidate);
+			const gameChanges = Object.fromEntries(
+				result.keys
+					.filter((k) => fullDiff[k])
+					.map((k) => [k, fullDiff[k]]),
+			);
 			if (!Object.keys(gameChanges).length) continue;
 
 			if (!game.webhookUrl) {
 				console.log(
 					`No webhook URL configured for ${game.name}, skipping notification`,
 				);
-				lastState[gameKey] = candidate;
+				for (const key of result.keys)
+					lastState[gameKey] = {
+						...lastState[gameKey],
+						[key]: candidate[key],
+					};
 				stateDirty = true;
 				continue;
 			}
@@ -118,9 +126,13 @@ async function checkChanges() {
 				messages,
 				embeds,
 			);
-			console.log(`Changes confirmed for ${game.name}, webhook sent.`);
+			console.log(
+				`Changes confirmed for ${game.name} (${result.keys.join(", ")}), webhook sent.`,
+			);
 
-			lastState[gameKey] = candidate;
+			lastState[gameKey] ??= {};
+			for (const key of result.keys)
+				lastState[gameKey][key] = candidate[key];
 			stateDirty = true;
 		}
 

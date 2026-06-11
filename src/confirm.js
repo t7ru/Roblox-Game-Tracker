@@ -2,24 +2,41 @@ import { createHash } from "node:crypto";
 
 const pending = new Map();
 
-export function fingerprint(state) {
-	return createHash("sha256").update(JSON.stringify(state)).digest("hex");
+function fp(value) {
+	return createHash("sha256")
+		.update(JSON.stringify(value ?? null))
+		.digest("hex");
 }
 
 export function evaluate(gameKey, committed, candidate) {
-	const committedFp = fingerprint(committed);
-	const candidateFp = fingerprint(candidate);
+	const keys = new Set([...Object.keys(committed), ...Object.keys(candidate)]);
+	const confirmed = [];
+	let anyPending = false;
 
-	if (candidateFp === committedFp) {
-		pending.delete(gameKey);
-		return { status: "unchanged" };
+	const pend = pending.get(gameKey) ?? new Map();
+
+	for (const key of keys) {
+		const oldFp = fp(committed[key]);
+		const newFp = fp(candidate[key]);
+
+		if (oldFp === newFp) {
+			pend.delete(key);
+			continue;
+		}
+
+		if (pend.get(key) === newFp) {
+			pend.delete(key);
+			confirmed.push(key);
+		} else {
+			pend.set(key, newFp);
+			anyPending = true;
+		}
 	}
 
-	if (pending.get(gameKey) === candidateFp) {
-		pending.delete(gameKey);
-		return { status: "confirmed" };
-	}
+	if (pend.size) pending.set(gameKey, pend);
+	else pending.delete(gameKey);
 
-	pending.set(gameKey, candidateFp);
-	return { status: "pending" };
+	if (confirmed.length) return { status: "confirmed", keys: confirmed };
+	if (anyPending) return { status: "pending" };
+	return { status: "unchanged" };
 }
